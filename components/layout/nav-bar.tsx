@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Dock, DockIcon } from "@/components/ui/dock";
 import { usePathname } from "next/navigation";
-import { FaDribbble, FaLinkedinIn } from "react-icons/fa6";
+import { FaDribbble, FaInstagram, FaLinkedinIn } from "react-icons/fa6";
 import { motion, AnimatePresence } from "motion/react"
 // import { ModeToggle } from "../shared/toggle-mode";
 
@@ -83,9 +83,9 @@ const DATA = {
                 icon: FaLinkedinIn,
             },
             X: {
-                name: "X",
-                url: "https://x.com/kryptoeden7",
-                icon: Icons.x,
+                name: "Instagram",
+                url: "https://www.instagram.com/amk.brand.studio?igsh=Z2E2MXJuMGV1emZ0&utm_source=qr",
+                icon: FaInstagram,
             },
             email: {
                 name: "Send Email",
