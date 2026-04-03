@@ -17,6 +17,7 @@ import { Dock, DockIcon } from "@/components/ui/dock";
 import { usePathname } from "next/navigation";
 import { FaDribbble, FaInstagram, FaLinkedinIn } from "react-icons/fa6";
 import { motion, AnimatePresence } from "motion/react"
+import { ModeToggle } from "../shared/toggle-mode";
 // import { ModeToggle } from "../shared/toggle-mode";
 
 export type IconProps = React.HTMLAttributes<SVGElement>;
@@ -176,6 +177,17 @@ export default function Navbar() {
                                             </Tooltip>
                                         </DockIcon>
                                     ))}
+                                    <Separator orientation="vertical" className="h-full py-2" />
+                                    <DockIcon>
+                                        <Tooltip>
+                                            <TooltipTrigger>
+                                                <ModeToggle />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Theme</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </DockIcon>
                                 </Dock>
                             </TooltipProvider>
                         </motion.div>
