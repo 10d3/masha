@@ -15,7 +15,7 @@ export function formatDate(date: string): string {
     });
 }
 /** Base URL for the site — used in sitemaps, OG tags, etc. */
-export const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? DATA.url ?? "http://localhost:3000";
+export const BASE_URL = process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? DATA.url ?? "http://localhost:3000";
 
 export function isValidUrl(url: string): boolean {
     try {
