@@ -15,8 +15,6 @@ type ProjectFormProps = {
   project?: Project | null;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function slugify(str: string) {
   return str
     .toLowerCase()
@@ -25,8 +23,6 @@ function slugify(str: string) {
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -89,8 +85,6 @@ function FormTextarea({ id, className, ...props }: React.ComponentProps<"textare
   );
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type ProcessStep = {
   number: string;
   title: string;
@@ -120,23 +114,46 @@ type FullWidthImage = {
   caption: string;
 };
 
-// ─── Main Form ────────────────────────────────────────────────────────────────
-
 export function ProjectForm({ project }: ProjectFormProps) {
   const isNew = !project;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [uploading, setUploading] = useState<string | null>(null); // tracks which field is uploading
+  const [uploading, setUploading] = useState<string | null>(null);
   const heroInputRef = useRef<HTMLInputElement>(null);
 
-  const { startUpload } = useUploadThing("imageUploader");
+  // ── Upload ref pattern ─────────────────────────────────────────────────────
+  const uploadFieldRef = useRef<{
+    field: string;
+    onSuccess: (url: string) => void;
+  } | null>(null);
 
-  async function uploadImage(file: File, field: string) {
+  const { startUpload } = useUploadThing("imageUploader", {
+    onClientUploadComplete: (res) => {
+      const url = res?.[0]?.ufsUrl;
+      if (url && uploadFieldRef.current) {
+        uploadFieldRef.current.onSuccess(url);
+      }
+      setUploading(null);
+      uploadFieldRef.current = null;
+    },
+    onUploadError: () => {
+      setUploading(null);
+      uploadFieldRef.current = null;
+    },
+  });
+
+  async function uploadImage(
+    file: File,
+    field: string,
+    onSuccess: (url: string) => void
+  ) {
+    uploadFieldRef.current = { field, onSuccess };
     setUploading(field);
-    const res = await startUpload([file]).catch(() => null);
-    setUploading(null);
-    return res?.[0]?.ufsUrl ?? null;
+    await startUpload([file]).catch(() => {
+      setUploading(null);
+      uploadFieldRef.current = null;
+    });
   }
 
   // ── Flat fields ────────────────────────────────────────────────────────────
@@ -164,20 +181,17 @@ export function ProjectForm({ project }: ProjectFormProps) {
     metaDescription: project?.metaDescription ?? "",
   });
 
-  // ── Jsonb fields (managed as arrays for easier editing) ────────────────────
   const [overviewMainText, setOverviewMainText] = useState(project?.overview?.mainText ?? "");
   const [overviewSubText, setOverviewSubText] = useState(project?.overview?.subText ?? "");
   const [overviewServices, setOverviewServices] = useState(
     (project?.overview?.services ?? []).join(", ")
   );
-
   const [processSectionTitle, setProcessSectionTitle] = useState(
     project?.process?.sectionTitle ?? ""
   );
   const [processSteps, setProcessSteps] = useState<ProcessStep[]>(
     project?.process?.steps ?? []
   );
-
   const [resultsIntroText, setResultsIntroText] = useState(project?.results?.introText ?? "");
   const [resultStats, setResultStats] = useState<ResultStat[]>(
     project?.results?.stats ?? []
@@ -187,25 +201,18 @@ export function ProjectForm({ project }: ProjectFormProps) {
     authorName: project?.results?.testimonial?.authorName ?? "",
     authorTitle: project?.results?.testimonial?.authorTitle ?? "",
   });
-
   const [gallery, setGallery] = useState<GalleryImage[]>(
     (project?.gallery ?? []).map((img) => ({ ...img, span: img.span ?? "half" }))
   );
-
   const [fullWidthImages, setFullWidthImages] = useState<FullWidthImage[]>(
     (project?.fullWidthImages ?? []).map((img) => ({ ...img, caption: img.caption ?? "" }))
   );
+  const [features, setFeatures] = useState<Feature[]>(project?.features ?? []);
 
-  const [features, setFeatures] = useState<Feature[]>(
-    project?.features ?? []
-  );
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
   function set(field: string, value: string | boolean | number) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -221,15 +228,8 @@ export function ProjectForm({ project }: ProjectFormProps) {
         subText: overviewSubText,
         services: overviewServices.split(",").map((s) => s.trim()).filter(Boolean),
       },
-      process: {
-        sectionTitle: processSectionTitle,
-        steps: processSteps,
-      },
-      results: {
-        introText: resultsIntroText,
-        stats: resultStats,
-        testimonial,
-      },
+      process: { sectionTitle: processSectionTitle, steps: processSteps },
+      results: { introText: resultsIntroText, stats: resultStats, testimonial },
       gallery,
       fullWidthImages: fullWidthImages.map(({ caption, ...rest }) => ({
         ...rest,
@@ -268,7 +268,6 @@ export function ProjectForm({ project }: ProjectFormProps) {
       <section>
         <SectionLabel>Core Info</SectionLabel>
         <div className="space-y-4">
-
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <FieldLabel htmlFor="title" required>Title</FieldLabel>
@@ -379,7 +378,6 @@ export function ProjectForm({ project }: ProjectFormProps) {
             <FieldLabel htmlFor="body" hint="Full rich-text body. Use / for slash commands.">Body</FieldLabel>
             <Editor content={form.body} onChange={(html) => set("body", html)} />
           </div>
-
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <FieldLabel htmlFor="role">Your Role</FieldLabel>
@@ -392,7 +390,6 @@ export function ProjectForm({ project }: ProjectFormProps) {
                 value={form.teamSize} onChange={(e) => set("teamSize", e.target.value)} />
             </div>
           </div>
-
           <div className="grid gap-4 lg:grid-cols-2">
             <div>
               <FieldLabel htmlFor="challenges" hint="One challenge per line.">Challenges</FieldLabel>
@@ -419,7 +416,6 @@ export function ProjectForm({ project }: ProjectFormProps) {
             <FormInput id="processSectionTitle" placeholder="How We Built It"
               value={processSectionTitle} onChange={(e) => setProcessSectionTitle(e.target.value)} />
           </div>
-
           <div className="space-y-3">
             {processSteps.map((step, i) => (
               <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -435,15 +431,13 @@ export function ProjectForm({ project }: ProjectFormProps) {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <FieldLabel>Number</FieldLabel>
-                    <FormInput id={`step-num-${i}`} placeholder="01"
-                      value={step.number}
+                    <FormInput id={`step-num-${i}`} placeholder="01" value={step.number}
                       onChange={(e) => setProcessSteps((prev) =>
                         prev.map((s, j) => j === i ? { ...s, number: e.target.value } : s))} />
                   </div>
                   <div>
                     <FieldLabel>Title</FieldLabel>
-                    <FormInput id={`step-title-${i}`} placeholder="Discovery"
-                      value={step.title}
+                    <FormInput id={`step-title-${i}`} placeholder="Discovery" value={step.title}
                       onChange={(e) => setProcessSteps((prev) =>
                         prev.map((s, j) => j === i ? { ...s, title: e.target.value } : s))} />
                   </div>
@@ -457,22 +451,22 @@ export function ProjectForm({ project }: ProjectFormProps) {
                 <div>
                   <FieldLabel hint="URL or upload path.">Image</FieldLabel>
                   <div className="flex gap-2">
-                    <FormInput id={`step-img-${i}`} placeholder="https://…"
-                      value={step.image}
+                    <FormInput id={`step-img-${i}`} placeholder="https://…" value={step.image}
                       onChange={(e) => setProcessSteps((prev) =>
                         prev.map((s, j) => j === i ? { ...s, image: e.target.value } : s))} />
                     <Button type="button" variant="outline" size="sm"
                       disabled={uploading === `step-${i}`}
                       className="shrink-0 h-10"
-                      onClick={async () => {
+                      onClick={() => {
                         const input = document.createElement("input");
                         input.type = "file"; input.accept = "image/*";
                         input.onchange = async () => {
                           const file = input.files?.[0];
                           if (!file) return;
-                          const url = await uploadImage(file, `step-${i}`);
-                          if (url) setProcessSteps((prev) =>
-                            prev.map((s, j) => j === i ? { ...s, image: url } : s));
+                          uploadImage(file, `step-${i}`, (url) =>
+                            setProcessSteps((prev) =>
+                              prev.map((s, j) => j === i ? { ...s, image: url } : s))
+                          );
                         };
                         input.click();
                       }}>
@@ -501,8 +495,6 @@ export function ProjectForm({ project }: ProjectFormProps) {
             <FieldLabel>Intro Text</FieldLabel>
             <Editor content={resultsIntroText} onChange={setResultsIntroText} />
           </div>
-
-          {/* Stats */}
           <div>
             <FieldLabel hint="Metrics like '60% faster' or '200+ users'.">Stats</FieldLabel>
             <div className="space-y-2">
@@ -526,8 +518,6 @@ export function ProjectForm({ project }: ProjectFormProps) {
               </Button>
             </div>
           </div>
-
-          {/* Testimonial */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Testimonial
@@ -602,15 +592,16 @@ export function ProjectForm({ project }: ProjectFormProps) {
                         prev.map((g, j) => j === i ? { ...g, src: e.target.value } : g))} />
                     <Button type="button" variant="outline" size="sm" className="shrink-0 h-10"
                       disabled={uploading === `gallery-${i}`}
-                      onClick={async () => {
+                      onClick={() => {
                         const input = document.createElement("input");
                         input.type = "file"; input.accept = "image/*";
                         input.onchange = async () => {
                           const file = input.files?.[0];
                           if (!file) return;
-                          const url = await uploadImage(file, `gallery-${i}`);
-                          if (url) setGallery((prev) =>
-                            prev.map((g, j) => j === i ? { ...g, src: url } : g));
+                          uploadImage(file, `gallery-${i}`, (url) =>
+                            setGallery((prev) =>
+                              prev.map((g, j) => j === i ? { ...g, src: url } : g))
+                          );
                         };
                         input.click();
                       }}>
@@ -620,8 +611,7 @@ export function ProjectForm({ project }: ProjectFormProps) {
                 </div>
                 <div>
                   <FieldLabel>Alt Text</FieldLabel>
-                  <FormInput id={`gallery-alt-${i}`} placeholder="Screenshot of dashboard"
-                    value={img.alt}
+                  <FormInput id={`gallery-alt-${i}`} placeholder="Screenshot of dashboard" value={img.alt}
                     onChange={(e) => setGallery((prev) =>
                       prev.map((g, j) => j === i ? { ...g, alt: e.target.value } : g))} />
                 </div>
@@ -672,15 +662,16 @@ export function ProjectForm({ project }: ProjectFormProps) {
                         prev.map((g, j) => j === i ? { ...g, src: e.target.value } : g))} />
                     <Button type="button" variant="outline" size="sm" className="shrink-0 h-10"
                       disabled={uploading === `fwi-${i}`}
-                      onClick={async () => {
+                      onClick={() => {
                         const input = document.createElement("input");
                         input.type = "file"; input.accept = "image/*";
                         input.onchange = async () => {
                           const file = input.files?.[0];
                           if (!file) return;
-                          const url = await uploadImage(file, `fwi-${i}`);
-                          if (url) setFullWidthImages((prev) =>
-                            prev.map((g, j) => j === i ? { ...g, src: url } : g));
+                          uploadImage(file, `fwi-${i}`, (url) =>
+                            setFullWidthImages((prev) =>
+                              prev.map((g, j) => j === i ? { ...g, src: url } : g))
+                          );
                         };
                         input.click();
                       }}>
@@ -752,11 +743,10 @@ export function ProjectForm({ project }: ProjectFormProps) {
                 {uploading === "heroImage" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
               </Button>
               <input ref={heroInputRef} type="file" accept="image/*" className="hidden"
-                onChange={async (e) => {
+                onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  const url = await uploadImage(file, "heroImage");
-                  if (url) set("heroImage", url);
+                  uploadImage(file, "heroImage", (url) => set("heroImage", url));
                   e.target.value = "";
                 }} />
             </div>
