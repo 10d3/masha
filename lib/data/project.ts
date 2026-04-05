@@ -6,23 +6,7 @@ import { eq, asc, and, gt, ne } from "drizzle-orm"
 export const getActiveProjects = unstable_cache(
   async () => {
     return db
-    .select({
-      id: projects.id,
-      title: projects.title,
-      slug: projects.slug,
-      description: projects.description,
-      category: projects.category,
-      year: projects.year,
-      heroImage: projects.heroImage,
-      videoUrl: projects.videoUrl,
-      technologies: projects.technologies,
-      gallery: projects.gallery,
-      siteUrl: projects.siteUrl,
-      sourceUrl: projects.sourceUrl,
-      active: projects.active,
-      order: projects.order,
-      dates: projects.dates,
-    })
+    .select()
     .from(projects)
     .where(eq(projects.active, true))
     .orderBy(asc(projects.order))
