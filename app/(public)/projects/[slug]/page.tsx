@@ -14,17 +14,13 @@ import { CaseStudyFooter } from "@/types/case-study"
 import { and, asc, eq, gt, ne } from "drizzle-orm"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { getProjectBySlug, getNextProject } from "@/lib/data/project"
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const [project] = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.slug, slug))
-    .limit(1);
-
+  const project = await getProjectBySlug(slug)
   if (!project) return {};
 
   return {
@@ -41,43 +37,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Page({ params }: Props) {
   const { slug } = await params
 
-  const [project] = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.slug, slug))
-    .limit(1)
+  const project = await getProjectBySlug(slug)
 
   if (!project) notFound()
 
   // next project by order
-  const [nextProject] = await db
-    .select({
-      title:     projects.title,
-      category:  projects.category,
-      slug:      projects.slug,
-      heroImage: projects.heroImage,
-    })
-    .from(projects)
-    .where(and(eq(projects.active, true), gt(projects.order, project.order)))
-    .orderBy(asc(projects.order))
-    .limit(1)
-
-  // wrap around to first if we're on the last one
-  const [fallback] = !nextProject
-    ? await db
-        .select({
-          title:     projects.title,
-          category:  projects.category,
-          slug:      projects.slug,
-          heroImage: projects.heroImage,
-        })
-        .from(projects)
-        .where(and(eq(projects.active, true), ne(projects.id, project.id)))
-        .orderBy(asc(projects.order))
-        .limit(1)
-    : []
-
-  const resolvedNext = nextProject ?? fallback ?? null
+  const resolvedNext = await getNextProject(project.order, project.id)
 
   const caseStudyData = mapProjectToCaseStudy(project)
 
@@ -93,7 +58,8 @@ export default async function Page({ params }: Props) {
     : null
 
   return (
-    <ScreenWrapper className="min-h-screen mx-auto">
+    <div className="min-h-screen">
+    <ScreenWrapper className="min-h-auto mx-auto">
       <Header year={project.year || ""} />
       <Hero data={caseStudyData.meta} />
       {caseStudyData.overview && <Overview data={caseStudyData.overview} />}
@@ -114,7 +80,8 @@ export default async function Page({ params }: Props) {
         />
       )}
       {caseStudyData.results && <Results data={caseStudyData.results} />}
-      {footer && <Footer data={footer} />}
     </ScreenWrapper>
+    {footer && <Footer data={footer} />}
+    </div>
   )
 }

@@ -74,7 +74,7 @@ export const Contact = () => {
     }
 
     return (
-        <ScreenWrapper className="flex flex-col gap-12 w-full min-h-auto">
+        <ScreenWrapper className="flex mx-auto flex-col gap-12 w-full min-h-auto">
             <BlurFade delay={BLUR_FADE_DELAY} inView>
                 <Card className="flex flex-col sm:flex-row justify-between gap-4 bg-gray-100 dark:bg-card p-4 w-full min-w-full">
                     {/* Email */}

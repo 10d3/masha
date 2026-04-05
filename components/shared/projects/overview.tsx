@@ -36,7 +36,7 @@ export function Overview({ data }: OverviewProps) {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
             >
-              <div className="text-2xl md:text-3xl lg:text-4xl font-serif leading-relaxed text-balance">
+              <div className="text-2xl md:text-3xl lg:text-4xl font-serif text-balance">
                 <TiptapRenderer content={data?.mainText as string} />
               </div>
             </motion.div>
