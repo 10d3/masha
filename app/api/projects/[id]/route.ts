@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { revalidatePath, revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { projects } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/auth-guard";
