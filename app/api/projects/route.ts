@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const [project] = await db.insert(projects).values(body).returning();
     revalidatePath("/");
     revalidatePath("/projects");
-    revalidateTag("projects")
+    revalidateTag("projects", "max")
     return NextResponse.json(project, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 });
